@@ -37,7 +37,7 @@ class TestGetLease:
 
     def test_unauthorized_request_for_a_lease(self):
         response = self.client.get(f'{self.endpoint}/{self.lease.id}')
-    
+
         assert is_valid(response, 401)
         assert response.json == {'msg': 'Missing Authorization Header'}
 
@@ -53,7 +53,7 @@ class TestGetLease:
         tenant_3 = TenantModel.find_by_id(lease_3.tenantID)
 
         response = self.client.get(self.endpoint, headers=auth_headers["pm"])
-    
+
         assert is_valid(response, 200)
         assert response.json == {
                 "Leases": [
@@ -62,10 +62,10 @@ class TestGetLease:
                     lease_3.json()
                 ]
             }
- 
+
     def test_unauthorized_request_for_all_leases(self):
         response = self.client.get(self.endpoint)
-    
+
         assert is_valid(response, 401)
         assert response.json == {'msg': 'Missing Authorization Header'}
 
@@ -77,7 +77,8 @@ class TestCreateLease:
 
         self.valid_payload = {
                 'dateTimeStart': Time.today(),
-                'dateTimeEnd': Time.one_year_from_now()
+                'dateTimeEnd': Time.one_year_from_now(),
+                'tenantID': 1
             }
         self.invalid_payload = {}
 
@@ -91,7 +92,7 @@ class TestCreateLease:
 
     def test_unauthorized_request_with_valid_payload(self):
         response = self.client.post(self.endpoint, json=self.valid_payload)
-    
+
         assert is_valid(response, 401)
         assert response.json == {'msg': 'Missing Authorization Header'}
 
@@ -118,7 +119,7 @@ class TestDeleteLease:
         num_leases = len(LeaseModel.query.all())
         response = self.client.delete(f'{self.endpoint}/504', headers=auth_headers["pm"])
 
-        assert is_valid(response, 404) 
+        assert is_valid(response, 404)
         assert response.json == {'Message': 'Lease Not Found'}
         assert num_leases == len(LeaseModel.query.all())
 
@@ -141,7 +142,7 @@ class TestUpdateLease:
 
         with freeze_time(Time.one_year_from_now()):
             response = self.client.put(f'{self.endpoint}/{self.lease.id}', json=payload, headers=auth_headers["pm"])
-            
+
             assert is_valid(response, 200)
             assert response.json['dateUpdated'] != old_date
 
@@ -153,7 +154,7 @@ class TestUpdateLease:
 
         assert is_valid(response, 400)
         assert response.json['dateUpdated'] == old_date
-        
+
     def test_invalid_attribute_ids(self, auth_headers):
         payload = {
                 'name': 'I',
@@ -199,31 +200,31 @@ class TestLeaseAuthorizations:
     # Test auth is in place at each endpoint
     def test_unauthorized_get_request(self):
         response = self.client.get('/api/lease/1')
-    
+
         assert is_valid(response, 401)
         assert response.json == {'msg': 'Missing Authorization Header'}
 
     def test_unauthorized_get_all_request(self):
         response = self.client.get('/api/lease')
-    
+
         assert is_valid(response, 401)
         assert response.json == {'msg': 'Missing Authorization Header'}
 
     def test_unauthorized_create_request(self):
         response = self.client.post('/api/lease')
-    
+
         assert is_valid(response, 401)
         assert response.json == {'msg': 'Missing Authorization Header'}
 
     def test_unauthorized_delete_request(self):
         response = self.client.delete('/api/lease/1')
-    
+
         assert is_valid(response, 401)
         assert response.json == {'msg': 'Missing Authorization Header'}
 
     def test_unauthorized_update_request(self):
         response = self.client.put('/api/lease/1')
-    
+
         assert is_valid(response, 401)
         assert response.json == {'msg': 'Missing Authorization Header'}
 
@@ -241,7 +242,8 @@ class TestLeaseAuthorizations:
     def test_authorized_create_request(self, auth_headers):
         payload = {
                 'dateTimeStart': Time.today(),
-                'dateTimeEnd': Time.one_year_from_now()
+                'dateTimeEnd': Time.one_year_from_now(),
+                'tenantID': 1
             }
         for _, role in auth_headers.items():
             response = self.client.post('/api/lease', json=payload, headers=role)
